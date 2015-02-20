@@ -1,9 +1,10 @@
 Requirements:
 'Python virtual environment creator' package
 
+for Ubuntu:
+
 sudo apt-get install python-virtualenv
 
-for Ubuntu:
 
 
 Create Python virtual environment:
