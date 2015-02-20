@@ -29,6 +29,11 @@ def enable_lacp():
 	exec_cmd(enable_sharing_swb)
 	exec_cmd(enable_mlag_swb)
 
+    save_conf_swa = 'ssh ' + user + '@' + swa + ' \'save\''
+    save_conf_swb = 'ssh ' + user + '@' + swb + ' \'save\''
+    exec_cmd(save_conf_swa)
+    exec_cmd(save_conf_swb)
+
     return
 
 
@@ -44,6 +49,11 @@ def disable_lacp():
 	exec_cmd(disable_mlag_swb)
 	exec_cmd(disable_sharing_swb)
 
+    save_conf_swa = 'ssh ' + user + '@' + swa + ' \'save\''
+    save_conf_swb = 'ssh ' + user + '@' + swb + ' \'save\''
+    exec_cmd(save_conf_swa)
+    exec_cmd(save_conf_swb)
+
     return
 
 
@@ -56,16 +66,17 @@ def exec_cmd(cmd):
     p=pexpect.spawn(cmd)
     i=p.expect([ssh_newkey,'Enter password for admin:',pexpect.EOF])
     if i==0:
-	print "I say yes"
+	print "I say yes\n"
 	p.sendline('yes')
 	i=p.expect([ssh_newkey,'Enter password for admin:',pexpect.EOF])
     if i==1:
-	print "I give password",
+	print "I give password\n",
 	p.sendline(password)
 	p.expect(pexpect.EOF)
     elif i==2:
-	print "I either got key or connection timeout"
+	print "I either got key or connection timeout\n"
 	pass
+    print cmd
     print p.before # print out the result
     return
 
@@ -77,7 +88,7 @@ import sys
 #action = sys.argv[1]
 
 if len(sys.argv) < 2:
-    print 'Usage: ./lacp {enable|disable}'
+    print 'Usage: ./lacp.py {enable|disable}'
     sys.exit(1)
 
 if sys.argv[1] == 'enable':
@@ -85,4 +96,4 @@ if sys.argv[1] == 'enable':
 elif sys.argv[1] == 'disable':
     disable_lacp()
 else:
-    print 'Usage: ./lacp {enable|disable}'
+    print 'Usage: ./lacp.py {enable|disable}'
