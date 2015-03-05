@@ -49,14 +49,40 @@ def exec_cmd(cmd):
 # this NIC doesn't look into PXE network
 # it is in UP state
 #
-def find_port():
-    swa_portmap1 = get_first_portmap(swa_command)
-    swb_portmap1 = get_first_portmap(swb_command)
-    return [swa_portmap1,swb_portmap1]
+def find_port(ip,iface):
+    # Prepare command to set NIC 'UP'
+    ifup = 'ssh ' + fuel + ' ssh ' +  ip + ' ifconfig ' + iface + ' up'
+    # Execute command
+    exec_cmd(ifup)
+    # in furure - check if link ok at this point
+    # verify_link()
+    # Get port maps for both switches when link is UP
+    swa_portmap1 = get_portmap(swa_command,'up')
+    swb_portmap1 = get_portmap(swb_command,'up')
+    # Prepare command to 'DOWN' the link
+    ifdown = 'ssh ' + fuel + ' ssh ' +  ip + ' ifconfig ' + iface + ' down'
+    # execute command
+    exec_cmd(ifdown)
+    # Get portmap for both switches when link is DOWN
+    swa_portmap2 = get_portmap(swa_command,'down')
+    swb_portmap2 = get_portmap(swb_command,'down')
+    # Set link UP
+    exec_cmd(ifup)
+    # Get comparation dictionary
+    for key in swa_portmap1:
+	if swa_portmap2[key] != swa_portmap1[key]:
+	    port = key
+	    sw = 'swa'
+    for key in swb_portmap1:
+	if swb_portmap2[key] != swb_portmap1[key]:
+	    port = key
+	    sw = 'swb'
+    #return [swa_portmap1,swb_portmap1]
     #should be:
     #return ['switch_name','port_number']
+    return [sw,port]
 
-def get_first_portmap(sw_command):
+def get_portmap(sw_command, link_status):
     portmap = {}
     lines = re.split('\n',exec_cmd(sw_command))
     # Get the dictionary of active ports (rest of them aren't needed)
@@ -64,10 +90,12 @@ def get_first_portmap(sw_command):
 	# I'm not sure it is the best regexp to use in this case
         if re.search('Em-.*', line):
 	    ln = line.split( );
-	    if ln[2] == 'active':
+	    if link_status == 'up':
+		if ln[2] == 'active':
+		    portmap[ln[0]] = ln[2]
+	    else:
 		portmap[ln[0]] = ln[2]
     return portmap
-
 
 def get_nodes_list():
     nodes_list={}
@@ -84,17 +112,16 @@ def get_port_mapping():
     for key in n_list:
 	eth_dict = {}
 	for e in eth_list:
-	    cmd = 'ssh ' + fuel + ' ssh ' +  n_list[key][1] + ' ifconfig ' + e + ' | grep eth'
+	    cmd = 'ssh ' + fuel + ' ssh ' +  n_list[key][1] + ' ifconfig ' + e + ' | grep Ethernet'
 	    ifc = exec_cmd(cmd)
-	    #if re.search('eth.*', ifc):
 	    eth = ifc.split( );
-	    eth_dict[eth[11]] = [eth[15],'swa']
+	    # Get switch name and switch port (list)
+#	    sw_port = find_port(n_list[key][1],eth[11])
+	    sw_port = find_port(n_list[key][1],e)
+	    eth_dict[e] = [eth[15],sw_port[0],sw_port[1]]
 	port_mapping[n_list[key][1]] = eth_dict
-    #return port_mapping
     return port_mapping
 
-#print find_port()
-#list = get_nodes_list()
-#print list['1'][1]
+
 mapping = get_port_mapping()
-print mapping['192.168.5.14']
+print mapping
