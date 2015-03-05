@@ -3,6 +3,8 @@
 import pexpect
 import re
 
+# at least we need mapping: NIC name (ethX) - mac address - switch - port
+# ethX is key in dictionary
 
 # Host names
 
@@ -13,8 +15,10 @@ swb = 'dc209-swb'
 password = ''
 #swb = 'dc157-swb'
 
+# NICs
 
-#arr[]
+eth_list = ['eth0','eth1','eth2','eth3']
+
 
 swa_command = 'ssh ' + swa + ' \'show ports info\''
 swb_command = 'ssh ' + swb + ' \'show ports info\''
@@ -49,6 +53,8 @@ def find_port():
     swa_portmap1 = get_first_portmap(swa_command)
     swb_portmap1 = get_first_portmap(swb_command)
     return [swa_portmap1,swb_portmap1]
+    #should be:
+    #return ['switch_name','port_number']
 
 def get_first_portmap(sw_command):
     portmap = {}
@@ -72,6 +78,23 @@ def get_nodes_list():
 	    nodes_list[nd[0]] = [nd[2],nd[9]]
     return nodes_list
 
+def get_port_mapping():
+    port_mapping = {}
+    n_list = get_nodes_list()
+    for key in n_list:
+	eth_dict = {}
+	for e in eth_list:
+	    cmd = 'ssh ' + fuel + ' ssh ' +  n_list[key][1] + ' ifconfig ' + e + ' | grep eth'
+	    ifc = exec_cmd(cmd)
+	    #if re.search('eth.*', ifc):
+	    eth = ifc.split( );
+	    eth_dict[eth[11]] = [eth[15],'swa']
+	port_mapping[n_list[key][1]] = eth_dict
+    #return port_mapping
+    return port_mapping
+
 #print find_port()
-list = get_nodes_list()
-print list['1'][1]
+#list = get_nodes_list()
+#print list['1'][1]
+mapping = get_port_mapping()
+print mapping['192.168.5.14']
