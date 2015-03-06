@@ -124,4 +124,10 @@ def get_port_mapping():
 
 
 mapping = get_port_mapping()
-print mapping
+for key in mapping:
+    print ' '
+    print key
+    eth_map = mapping[key]
+    for key in eth_map:
+	print key +' - ' + eth_map[key][0] +' - ' + eth_map[key][1] +' - ' + eth_map[key][2]
+
