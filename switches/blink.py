@@ -3,17 +3,45 @@
 import pexpect
 import re
 
-# at least we need mapping: NIC name (ethX) - mac address - switch - port
-# ethX is key in dictionary
+
+# at least we need mapping:
+# node ip address - NIC name (ethX) - mac address - switch - port
+# maybe node name, or concatenation 'node-' + node_id will be more user friendly
+# node ip or node name should the key of the dictionary
+#
+# Current implementation:
+#
+# ip_address1
+#	eth0 - mac_address - switch - port
+#	eth1 - mac_address - switch - port
+#	eth2 - mac_address - switch - port
+#	eth3 - mac_address - switch - port
+#
+# ip_address2
+#	eth0 - mac_address - switch - port
+# ....
+#
+# To be implemented:
+#
+# node-1 (ip_address1):
+#	eth0 - mac_address - switch - port
+#	eth1 - mac_address - switch - port
+#	eth2 - mac_address - switch - port
+#	eth3 - mac_address - switch - port
+#
+# node-2 (ip_address2):
+#	eth0 - mac_address - switch - port
+# ....
+#
+#
 
 # Host names
 
-fuel = 'fuel-dc209'
-swa = 'dc209-swa'
-swb = 'dc209-swb'
+fuel = 'fuel-naster'
+swa = 'switch_a'
+swb = 'switch_b'
 
-password = ''
-#swb = 'dc157-swb'
+password = 'password'
 
 # NICs
 
@@ -22,6 +50,8 @@ eth_list = ['eth0','eth1','eth2','eth3']
 
 swa_command = 'ssh ' + swa + ' \'show ports info\''
 swb_command = 'ssh ' + swb + ' \'show ports info\''
+
+# Change env id if it's needed
 fuel_command = 'ssh ' + fuel + ' fuel nodes --env 1'
 
 def exec_cmd(cmd):
@@ -44,11 +74,7 @@ def exec_cmd(cmd):
     print p.before # print out the result
     return p.before
 
-# Before call this func ensure:
-# corresponding NIC on the node is connected to the switch
-# this NIC doesn't look into PXE network
-# it is in UP state
-#
+
 def find_port(ip,iface):
     # Prepare command to set NIC 'UP'
     ifup = 'ssh ' + fuel + ' ssh ' +  ip + ' ifconfig ' + iface + ' up'
@@ -115,8 +141,6 @@ def get_port_mapping():
 	    cmd = 'ssh ' + fuel + ' ssh ' +  n_list[key][1] + ' ifconfig ' + e + ' | grep Ethernet'
 	    ifc = exec_cmd(cmd)
 	    eth = ifc.split( );
-	    # Get switch name and switch port (list)
-#	    sw_port = find_port(n_list[key][1],eth[11])
 	    sw_port = find_port(n_list[key][1],e)
 	    eth_dict[e] = [eth[15],sw_port[0],sw_port[1]]
 	port_mapping[n_list[key][1]] = eth_dict
